@@ -99,6 +99,7 @@ A aplicação está organizada em quatro partes principais:
 
 ## Estrutura do projeto
 
+```text
 cesta-inteligente-tcc/
 ├── backend/
 ├── frontend/
@@ -110,3 +111,35 @@ cesta-inteligente-tcc/
 ├── README.md
 ├── .gitignore
 └── LICENSE
+```
+
+## Documentação e Diagramas
+
+Os diagramas do projeto estão organizados em `docs/diagramas/`, contemplando:
+
+- **Banco de dados**
+  - Modelo conceitual
+  - Modelo lógico
+
+- **Visão de casos de uso**
+  - Casos de uso do sistema
+
+- **Visão de implantação**
+  - Estrutura física e comunicação entre os módulos
+
+- **Visão lógica**
+  - Diagrama de camadas
+  - Diagrama de pacotes
+
+- **Visão de implementação**
+  - Diagramas de classe por caso de uso
+  - Diagramas de sequência por caso de uso
+
+### Principais diagramas
+
+![Casos de Uso](docs/diagramas/visao-casos-de-uso/casos-de-uso.png)
+![Implantação](docs/diagramas/visao-implantacao/implantacao.png)
+![Modelo Conceitual](docs/diagramas/banco-de-dados/modelo-conceitual/modelo-conceitual.png)
+![Modelo Lógico](docs/diagramas/banco-de-dados/modelo-logico/modelo-logico.png)
+![Camadas](docs/diagramas/visao-logica/camadas/camadas.png)
+![Pacotes](docs/diagramas/visao-logica/pacotes/pacotes.png)
