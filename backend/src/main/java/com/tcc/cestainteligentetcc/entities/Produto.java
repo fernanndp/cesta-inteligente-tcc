@@ -5,9 +5,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.math.BigDecimal;
-import java.util.List;
-
 @Entity
 @Table(name = "produto")
 @Getter
@@ -27,16 +24,16 @@ public class Produto {
     @Column(length = 50, nullable = false)
     private String gramatura;
 
-    @Column(precision = 10, scale = 2, nullable = false)
-    private BigDecimal preco;
+    @Column(name = "preco_centavos", nullable = false)
+    private Integer precoCentavos;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "categoria_id")
+    private Categoria categoria;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "supermercado_id")
     private Supermercado supermercado;
-
-    @OneToMany(mappedBy = "produto")
-    private List<ItemResultado> itensResultado;
-
 
 }
 

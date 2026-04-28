@@ -29,8 +29,5 @@ public class Supermercado {
 
     @OneToMany(mappedBy = "supermercado")
     private List<Produto> produtos;
-
-    @OneToMany(mappedBy = "supermercado")
-    private List<Simulacao> simulacoes;
 }
 
