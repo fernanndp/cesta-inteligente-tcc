@@ -52,12 +52,7 @@ class ServicoOtimizacao:
 
         orcamento_restante = requisicao.orcamento_centavos - custo_obrigatorios
 
-        avisos = avisos_obrigatorios + self._gerar_avisos_pre_calculo(
-            requisicao=requisicao,
-            produtos=produtos_disponiveis,
-            itens_restantes=itens_para_otimizar,
-            custo_obrigatorios=custo_obrigatorios,
-        )
+        avisos = list(avisos_obrigatorios)
 
         if orcamento_restante < 0:
             return self._montar_resposta(
@@ -82,11 +77,22 @@ class ServicoOtimizacao:
 
         total_gasto = custo_obrigatorios + custo_otimizados
 
+        avisos += self._gerar_avisos_pos_calculo(
+            itens_solicitados=itens_para_otimizar,
+            itens_selecionados=itens_otimizados,
+        )
+
         mensagem = "Cesta otimizada com sucesso."
+
         if avisos_obrigatorios:
             mensagem = (
                 "Cesta otimizada parcialmente. Alguns itens obrigatórios "
                 "não puderam ser incluídos, mas o restante foi otimizado."
+            )
+        elif avisos:
+            mensagem = (
+                "Cesta otimizada parcialmente. Nem todas as categorias "
+                "solicitadas puderam ser incluídas dentro do orçamento."
             )
 
         return self._montar_resposta(
@@ -173,33 +179,45 @@ class ServicoOtimizacao:
 
         return grupos
 
-    def _gerar_avisos_pre_calculo(
+    def _gerar_avisos_pos_calculo(
         self,
-        requisicao: RequisicaoOtimizacao,
-        produtos: list[Produto],
-        itens_restantes: list[ItemEntrada],
-        custo_obrigatorios: int,
+        itens_solicitados: list[ItemEntrada],
+        itens_selecionados: list[ItemSelecionado],
     ) -> list[str]:
         avisos: list[str] = []
 
-        soma_minimos = 0
-        for item in itens_restantes:
-            candidatos = [
-                p for p in produtos
-                if self._filtro.produto_atende_restricoes(p, item)
-            ]
+        categorias_selecionadas = {
+            self._normalizar_categoria(item.categoria)
+            for item in itens_selecionados
+        }
 
-            if candidatos:
-                menor = min(candidatos, key=lambda p: p.preco_centavos)
-                soma_minimos += menor.preco_centavos * item.quantidade
+        categorias_nao_atendidas: list[str] = []
+        categorias_ja_verificadas: set[str] = set()
 
-        if custo_obrigatorios + soma_minimos > requisicao.orcamento_centavos:
+        for item in itens_solicitados:
+            categoria_normalizada = self._normalizar_categoria(item.categoria)
+
+            if categoria_normalizada in categorias_ja_verificadas:
+                continue
+
+            categorias_ja_verificadas.add(categoria_normalizada)
+
+            if categoria_normalizada not in categorias_selecionadas:
+                categorias_nao_atendidas.append(item.categoria)
+
+        if categorias_nao_atendidas:
+            categorias = ", ".join(categorias_nao_atendidas)
+
             avisos.append(
-                "Com os itens obrigatórios atuais, talvez não seja possível "
-                "atender todas as demais categorias dentro do orçamento."
+                "Não foi possível atender todas as categorias solicitadas "
+                f"dentro do orçamento: {categorias}."
             )
 
         return avisos
+
+    @staticmethod
+    def _normalizar_categoria(categoria: str) -> str:
+        return categoria.strip().lower()
 
     def _montar_resposta(
         self,
