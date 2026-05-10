@@ -29,6 +29,23 @@ class ServicoOtimizacao:
             if p.id not in ids_proibidos
         ]
 
+        if not produtos:
+            return self._montar_resposta(
+                status="inviavel",
+                mensagem=(
+                    "Não foi possível otimizar a cesta porque o supermercado informado "
+                    "não existe, está inativo ou não possui produtos cadastrados."
+                ),
+                requisicao=requisicao,
+                obrigatorios=[],
+                otimizados=[],
+                total_gasto=0,
+                avisos=[
+                    f"Nenhum produto foi encontrado para o supermercado_id "
+                    f"{requisicao.supermercado_id}."
+                ],
+            )
+
         itens_obrigatorios = [
             i for i in requisicao.itens
             if i.classificacao == ClassificacaoItem.OBRIGATORIO
@@ -50,9 +67,23 @@ class ServicoOtimizacao:
             )
         )
 
-        orcamento_restante = requisicao.orcamento_centavos - custo_obrigatorios
-
         avisos = list(avisos_obrigatorios)
+
+        if avisos_obrigatorios:
+            return self._montar_resposta(
+                status="inviavel",
+                mensagem=(
+                    "Não foi possível otimizar a cesta porque há item obrigatório "
+                    "sem produto compatível disponível."
+                ),
+                requisicao=requisicao,
+                obrigatorios=obrigatorios_selecionados,
+                otimizados=[],
+                total_gasto=custo_obrigatorios,
+                avisos=avisos,
+            )
+
+        orcamento_restante = requisicao.orcamento_centavos - custo_obrigatorios
 
         if orcamento_restante < 0:
             return self._montar_resposta(
@@ -84,12 +115,7 @@ class ServicoOtimizacao:
 
         mensagem = "Cesta otimizada com sucesso."
 
-        if avisos_obrigatorios:
-            mensagem = (
-                "Cesta otimizada parcialmente. Alguns itens obrigatórios "
-                "não puderam ser incluídos, mas o restante foi otimizado."
-            )
-        elif avisos:
+        if avisos:
             mensagem = (
                 "Cesta otimizada parcialmente. Nem todas as categorias "
                 "solicitadas puderam ser incluídas dentro do orçamento."
@@ -129,16 +155,14 @@ class ServicoOtimizacao:
             if not candidatos_antes:
                 avisos.append(
                     f"Não existe produto compatível para o item obrigatório "
-                    f"'{item.categoria}' neste supermercado. O restante da cesta "
-                    f"foi otimizado sem esse item."
+                    f"'{item.categoria}' neste supermercado."
                 )
                 continue
 
             if not candidatos:
                 avisos.append(
                     f"'{item.categoria}' foi marcado como obrigatório, mas todas "
-                    f"as opções disponíveis foram proibidas. O restante da cesta "
-                    f"foi otimizado sem esse item."
+                    f"as opções disponíveis foram proibidas."
                 )
                 continue
 
