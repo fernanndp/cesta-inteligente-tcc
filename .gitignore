@@ -1,0 +1,61 @@
+# =========================
+# Java / Spring Boot
+# =========================
+target/
+*.class
+*.log
+*.jar
+*.war
+*.ear
+.mvn/
+.idea/
+.project
+.classpath
+.settings/
+
+# =========================
+# Node / React
+# =========================
+node_modules/
+dist/
+build/
+coverage/
+
+# =========================
+# Python
+# =========================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+
+# =========================
+# Ambiente / segredos
+# =========================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+application-local.properties
+application-secret.properties
+
+# =========================
+# Sistema operacional
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# VS Code
+# =========================
+.vscode/
+
+# =========================
+# Arquivos temporários
+# =========================
+*.tmp
+*.swp
