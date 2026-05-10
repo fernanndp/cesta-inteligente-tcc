@@ -240,7 +240,7 @@ class ServicoOtimizacao:
             supermercado_id=requisicao.supermercado_id,
             orcamento_inicial_centavos=requisicao.orcamento_centavos,
             total_gasto_centavos=total_gasto,
-            troco_centavos=requisicao.orcamento_centavos - total_gasto,
+            troco_centavos=max(0, requisicao.orcamento_centavos - total_gasto),
             itens_obrigatorios_selecionados=[
                 self._mapear_item(i) for i in obrigatorios
             ],
