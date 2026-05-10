@@ -1,0 +1,9 @@
+build/
+.gradle/
+.idea/
+*.iml
+out/
+bin/
+src/test/
+application-local.properties
+.env

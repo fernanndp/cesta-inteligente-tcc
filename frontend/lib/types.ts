@@ -1,4 +1,3 @@
-// Tipos baseados na entidade Java Produto
 export interface Produto {
   id: number
   nome: string
@@ -9,26 +8,61 @@ export interface Produto {
   supermercadoId: number
 }
 
-export type Prioridade = "desejado" | "prioritario"
-
-export type TipoRestricao = "marca" | "nome"
-
-export interface Restricao {
-  tipo: TipoRestricao
-  valor: string
+export interface Supermercado {
+  id: number
+  nome: string
+  rede: string
+  ativo: boolean
 }
+
+export type Classificacao = "obrigatorio" | "prioritario" | "desejado"
 
 export interface ItemLista {
   produto: Produto
-  prioridade: Prioridade
-  restricao: Restricao | null
+  classificacao: Classificacao
+  quantidade: number
+  marca: string | null
+  gramatura: string | null
 }
 
-export interface RequestPayload {
-  itens: {
-    produtoId: number
-    prioridade: Prioridade
-    restricao: Restricao | null
-  }[]
-  valorDisponivel: number
+export interface ItemEntradaOtimizador {
+  categoria: string
+  classificacao: Classificacao
+  quantidade: number
+  marca: string | null
+  gramatura: string | null
+  marca_preferida: string | null
+  gramatura_preferida: string | null
+}
+
+export interface RequisicaoOtimizacao {
+  supermercado_id: number
+  orcamento_centavos: number
+  itens: ItemEntradaOtimizador[]
+  itens_proibidos: { product_id: number }[]
+  semente_aleatoria: number | null
+}
+
+export interface ItemSelecionadoResposta {
+  categoria: string
+  product_id: number
+  nome: string
+  marca: string
+  gramatura: string
+  quantidade: number
+  preco_unitario_centavos: number
+  subtotal_centavos: number
+  classificacao: string
+}
+
+export interface RespostaOtimizacao {
+  status: string
+  mensagem: string | null
+  supermercado_id: number
+  orcamento_inicial_centavos: number
+  total_gasto_centavos: number
+  troco_centavos: number
+  itens_obrigatorios_selecionados: ItemSelecionadoResposta[]
+  itens_otimizados: ItemSelecionadoResposta[]
+  avisos: string[]
 }
