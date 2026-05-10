@@ -1,5 +1,6 @@
-import psycopg2
-from psycopg2.extras import RealDictCursor
+import psycopg
+from psycopg.rows import dict_row
+
 from app.config import Config
 
 
@@ -17,7 +18,7 @@ class BancoPostgres:
 
         url = cls._normalizar_url(Config.DATABASE_URL)
 
-        return psycopg2.connect(
+        return psycopg.connect(
             url,
-            cursor_factory=RealDictCursor,
+            row_factory=dict_row,
         )
