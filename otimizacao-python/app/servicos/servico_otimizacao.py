@@ -29,6 +29,19 @@ class ServicoOtimizacao:
             if p.id not in ids_proibidos
         ]
 
+        if not requisicao.itens:
+            return self._montar_resposta(
+                status="inviavel",
+                mensagem="Não foi possível otimizar a cesta porque nenhum item foi informado.",
+                requisicao=requisicao,
+                obrigatorios=[],
+                otimizados=[],
+                total_gasto=0,
+                avisos=[
+                    "A lista de itens solicitados está vazia."
+                ],
+            )
+
         if not produtos:
             return self._montar_resposta(
                 status="inviavel",
@@ -109,16 +122,31 @@ class ServicoOtimizacao:
         total_gasto = custo_obrigatorios + custo_otimizados
 
         avisos += self._gerar_avisos_pos_calculo(
+            produtos=produtos_disponiveis,
             itens_solicitados=itens_para_otimizar,
             itens_selecionados=itens_otimizados,
         )
+
+        if itens_para_otimizar and not obrigatorios_selecionados and not itens_otimizados:
+            return self._montar_resposta(
+                status="inviavel",
+                mensagem=(
+                    "Não foi possível otimizar a cesta porque nenhum item solicitado "
+                    "pôde ser incluído dentro do orçamento informado ou das restrições aplicadas."
+                ),
+                requisicao=requisicao,
+                obrigatorios=[],
+                otimizados=[],
+                total_gasto=0,
+                avisos=avisos,
+            )
 
         mensagem = "Cesta otimizada com sucesso."
 
         if avisos:
             mensagem = (
-                "Cesta otimizada parcialmente. Nem todas as categorias "
-                "solicitadas puderam ser incluídas dentro do orçamento."
+                "Cesta otimizada parcialmente. Nem todas as categorias solicitadas "
+                "puderam ser incluídas dentro do orçamento ou das restrições aplicadas."
             )
 
         return self._montar_resposta(
@@ -162,7 +190,7 @@ class ServicoOtimizacao:
             if not candidatos:
                 avisos.append(
                     f"'{item.categoria}' foi marcado como obrigatório, mas todas "
-                    f"as opções disponíveis foram proibidas."
+                    f"as opções compatíveis foram proibidas."
                 )
                 continue
 
@@ -205,6 +233,7 @@ class ServicoOtimizacao:
 
     def _gerar_avisos_pos_calculo(
         self,
+        produtos: list[Produto],
         itens_solicitados: list[ItemEntrada],
         itens_selecionados: list[ItemSelecionado],
     ) -> list[str]:
@@ -215,7 +244,6 @@ class ServicoOtimizacao:
             for item in itens_selecionados
         }
 
-        categorias_nao_atendidas: list[str] = []
         categorias_ja_verificadas: set[str] = set()
 
         for item in itens_solicitados:
@@ -226,16 +254,25 @@ class ServicoOtimizacao:
 
             categorias_ja_verificadas.add(categoria_normalizada)
 
-            if categoria_normalizada not in categorias_selecionadas:
-                categorias_nao_atendidas.append(item.categoria)
+            if categoria_normalizada in categorias_selecionadas:
+                continue
 
-        if categorias_nao_atendidas:
-            categorias = ", ".join(categorias_nao_atendidas)
+            candidatos = [
+                p for p in produtos
+                if self._filtro.produto_atende_restricoes(p, item)
+            ]
 
-            avisos.append(
-                "Não foi possível atender todas as categorias solicitadas "
-                f"dentro do orçamento: {categorias}."
-            )
+            if not candidatos:
+                avisos.append(
+                    f"Não existe produto compatível para a categoria "
+                    f"'{item.categoria}' neste supermercado ou todas as opções "
+                    f"compatíveis foram proibidas."
+                )
+            else:
+                avisos.append(
+                    f"Não foi possível incluir a categoria '{item.categoria}' "
+                    f"dentro do orçamento disponível."
+                )
 
         return avisos
 
