@@ -5,6 +5,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import type {
   Produto,
   Supermercado,
@@ -82,6 +92,7 @@ export default function Home() {
   const [classificacao, setClassificacao] = useState<Classificacao>("desejado");
   const [marcaConstraint, setMarcaConstraint] = useState("");
   const [gramaturaConstraint, setGramaturaConstraint] = useState("");
+  const [mostrarRestricoes, setMostrarRestricoes] = useState(false);
 
   const [itensLista, setItensLista] = useState<ItemLista[]>([]);
   const [itensProibidos, setItensProibidos] = useState<ItemProibidoLocal[]>([]);
@@ -90,6 +101,9 @@ export default function Home() {
   const [enviando, setEnviando] = useState(false);
   const [resultado, setResultado] = useState<RespostaOtimizacao | null>(null);
   const [erroOtimizacao, setErroOtimizacao] = useState("");
+
+  const [supermercadoPendente, setSupermercadoPendente] = useState<number | null>(null);
+  const [dialogTrocarSupermercado, setDialogTrocarSupermercado] = useState(false);
 
   useEffect(() => {
     const carregar = async () => {
@@ -126,14 +140,54 @@ export default function Home() {
   const categorias = [...new Set(produtosDoSupermercado.map((p) => p.categoria))].sort();
 
   const produtosFiltrados = categoriaSelecionada
-    ? produtosDoSupermercado.filter((p) => p.categoria === categoriaSelecionada)
+    ? produtosDoSupermercado
+        .filter((p) => p.categoria === categoriaSelecionada)
+        .filter(
+          (p) =>
+            !marcaConstraint.trim() ||
+            p.marca.toLowerCase().includes(marcaConstraint.trim().toLowerCase())
+        )
+        .filter(
+          (p) =>
+            !gramaturaConstraint.trim() ||
+            p.gramatura.toLowerCase().includes(gramaturaConstraint.trim().toLowerCase())
+        )
     : [];
 
   const selecionarProduto = (id: number) => {
     const prod = produtos.find((p) => p.id === id) ?? null;
     setProdutoSelecionado(prod);
-    setMarcaConstraint(prod?.marca ?? "");
-    setGramaturaConstraint(prod?.gramatura ?? "");
+  };
+
+  const aplicarTrocaSupermercado = (novoId: number | null) => {
+    setSupermercadoId(novoId);
+    setItensLista([]);
+    setCategoriaSelecionada("");
+    setProdutoSelecionado(null);
+    setMarcaConstraint("");
+    setGramaturaConstraint("");
+    setMostrarRestricoes(false);
+    setClassificacao("desejado");
+  };
+
+  const tentarTrocarSupermercado = (novoId: number | null) => {
+    if (itensLista.length > 0) {
+      setSupermercadoPendente(novoId);
+      setDialogTrocarSupermercado(true);
+    } else {
+      aplicarTrocaSupermercado(novoId);
+    }
+  };
+
+  const confirmarTrocaSupermercado = () => {
+    aplicarTrocaSupermercado(supermercadoPendente);
+    setDialogTrocarSupermercado(false);
+    setSupermercadoPendente(null);
+  };
+
+  const cancelarTrocaSupermercado = () => {
+    setDialogTrocarSupermercado(false);
+    setSupermercadoPendente(null);
   };
 
   const adicionarItem = () => {
@@ -151,6 +205,7 @@ export default function Home() {
     setProdutoSelecionado(null);
     setMarcaConstraint("");
     setGramaturaConstraint("");
+    setMostrarRestricoes(false);
     setCategoriaSelecionada("");
     setClassificacao("desejado");
   };
@@ -183,6 +238,7 @@ export default function Home() {
     setMarcaConstraint("");
     setGramaturaConstraint("");
     setClassificacao("desejado");
+    setMostrarRestricoes(false);
   };
 
   const enviarLista = async () => {
@@ -246,6 +302,32 @@ export default function Home() {
       <div className="mx-auto max-w-4xl space-y-6">
         <h1 className="text-3xl font-bold text-primary">Cesta Inteligente</h1>
 
+        <AlertDialog
+          open={dialogTrocarSupermercado}
+          onOpenChange={(open) => {
+            if (!open) cancelarTrocaSupermercado();
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Trocar de supermercado?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Você tem {itensLista.length}{" "}
+                {itensLista.length === 1 ? "item" : "itens"} na lista. Ao trocar
+                de supermercado, todos os itens serão removidos. Deseja continuar?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={cancelarTrocaSupermercado}>
+                Cancelar
+              </AlertDialogCancel>
+              <AlertDialogAction onClick={confirmarTrocaSupermercado}>
+                Continuar
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         {erroCarregamento && (
           <p className="text-sm text-destructive">{erroCarregamento}</p>
         )}
@@ -257,7 +339,9 @@ export default function Home() {
           </CardHeader>
           <CardContent className="space-y-4">
             {carregando && (
-              <p className="text-sm text-muted-foreground">Carregando dados da API...</p>
+              <p className="text-sm text-muted-foreground">
+                Carregando dados da API...
+              </p>
             )}
 
             {/* Supermercado */}
@@ -266,13 +350,11 @@ export default function Home() {
               <select
                 id="supermercado"
                 value={supermercadoId ?? ""}
-                onChange={(e) => {
-                  setSupermercadoId(e.target.value ? Number(e.target.value) : null);
-                  setCategoriaSelecionada("");
-                  setProdutoSelecionado(null);
-                  setMarcaConstraint("");
-                  setGramaturaConstraint("");
-                }}
+                onChange={(e) =>
+                  tentarTrocarSupermercado(
+                    e.target.value ? Number(e.target.value) : null
+                  )
+                }
                 disabled={carregando}
                 className="w-full rounded-md border border-border bg-input px-3 py-2 text-foreground"
               >
@@ -297,6 +379,8 @@ export default function Home() {
                     setProdutoSelecionado(null);
                     setMarcaConstraint("");
                     setGramaturaConstraint("");
+                    setMostrarRestricoes(false);
+                    setClassificacao("desejado");
                   }}
                   className="w-full rounded-md border border-border bg-input px-3 py-2 text-foreground"
                 >
@@ -310,89 +394,159 @@ export default function Home() {
               </div>
             )}
 
-            {/* Produto */}
+            {/* Classificação — aparece após categoria, antes de produto */}
             {categoriaSelecionada && (
               <div className="space-y-2">
-                <Label htmlFor="produto">Produto (referência)</Label>
+                <Label>Classificação</Label>
+                <div className="flex gap-4">
+                  {(["obrigatorio", "prioritario", "desejado"] as Classificacao[]).map(
+                    (c) => (
+                      <label
+                        key={c}
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
+                        <input
+                          type="radio"
+                          name="classificacao"
+                          value={c}
+                          checked={classificacao === c}
+                          onChange={() => setClassificacao(c)}
+                          className="accent-primary"
+                        />
+                        <span>{LABEL_CLASSIFICACAO[c]}</span>
+                      </label>
+                    )
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Restrições — colapsável, "sem restrição" como padrão */}
+            {categoriaSelecionada && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>Restrições</Label>
+                  {!mostrarRestricoes ? (
+                    <button
+                      type="button"
+                      onClick={() => setMostrarRestricoes(true)}
+                      className="text-xs text-primary hover:underline"
+                    >
+                      + Adicionar restrição
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMostrarRestricoes(false);
+                        setMarcaConstraint("");
+                        setGramaturaConstraint("");
+                        setProdutoSelecionado(null);
+                      }}
+                      className="text-xs text-muted-foreground hover:underline"
+                    >
+                      Remover restrições
+                    </button>
+                  )}
+                </div>
+                {!mostrarRestricoes ? (
+                  <p className="rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground">
+                    Sem restrição — qualquer marca ou gramatura será aceita
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label
+                        htmlFor="marca-constraint"
+                        className="text-xs text-muted-foreground"
+                      >
+                        Exigir marca
+                      </Label>
+                      <Input
+                        id="marca-constraint"
+                        placeholder="Qualquer marca"
+                        value={marcaConstraint}
+                        onChange={(e) => {
+                          setMarcaConstraint(e.target.value);
+                          setProdutoSelecionado(null);
+                        }}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label
+                        htmlFor="gramatura-constraint"
+                        className="text-xs text-muted-foreground"
+                      >
+                        Exigir gramatura
+                      </Label>
+                      <Input
+                        id="gramatura-constraint"
+                        placeholder="Qualquer gramatura"
+                        value={gramaturaConstraint}
+                        onChange={(e) => {
+                          setGramaturaConstraint(e.target.value);
+                          setProdutoSelecionado(null);
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Referência do produto — aparece após classificação e restrições */}
+            {categoriaSelecionada && (
+              <div className="space-y-2">
+                <Label htmlFor="produto">Referência do produto</Label>
                 <select
                   id="produto"
                   value={produtoSelecionado?.id ?? ""}
                   onChange={(e) => {
                     if (e.target.value) selecionarProduto(Number(e.target.value));
-                    else {
-                      setProdutoSelecionado(null);
-                      setMarcaConstraint("");
-                      setGramaturaConstraint("");
-                    }
+                    else setProdutoSelecionado(null);
                   }}
                   className="w-full rounded-md border border-border bg-input px-3 py-2 text-foreground"
                 >
                   <option value="">Selecione um produto</option>
                   {produtosFiltrados.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.nome} — {p.marca} ({p.gramatura}) —{" "}
-                      {p.preco.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                      {p.nome}
                     </option>
                   ))}
                 </select>
-              </div>
-            )}
 
-            {/* Classificação */}
-            {produtoSelecionado && (
-              <div className="space-y-2">
-                <Label>Classificação</Label>
-                <div className="flex gap-4">
-                  {(["obrigatorio", "prioritario", "desejado"] as Classificacao[]).map((c) => (
-                    <label key={c} className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="classificacao"
-                        value={c}
-                        checked={classificacao === c}
-                        onChange={() => setClassificacao(c)}
-                        className="accent-primary"
-                      />
-                      <span>{LABEL_CLASSIFICACAO[c]}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Restrições */}
-            {produtoSelecionado && (
-              <div className="space-y-2">
-                <Label>
-                  Restrições{" "}
-                  <span className="text-xs font-normal text-muted-foreground">
-                    (limpe o campo para aceitar qualquer valor)
-                  </span>
-                </Label>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label htmlFor="marca-constraint" className="text-xs text-muted-foreground">
-                      Exigir marca
-                    </Label>
-                    <Input
-                      id="marca-constraint"
-                      placeholder="Qualquer marca"
-                      value={marcaConstraint}
-                      onChange={(e) => setMarcaConstraint(e.target.value)}
-                    />
+                {/* Detalhes do produto selecionado */}
+                {produtoSelecionado && (
+                  <div className="rounded-lg border border-border bg-secondary p-3 space-y-2">
+                    <p className="font-medium">{produtoSelecionado.nome}</p>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                      <span>
+                        Marca:{" "}
+                        <span className="font-medium text-foreground">
+                          {produtoSelecionado.marca}
+                        </span>
+                      </span>
+                      <span>
+                        Gramatura:{" "}
+                        <span className="font-medium text-foreground">
+                          {produtoSelecionado.gramatura}
+                        </span>
+                      </span>
+                      <span>
+                        Categoria:{" "}
+                        <span className="font-medium text-foreground">
+                          {produtoSelecionado.categoria}
+                        </span>
+                      </span>
+                    </div>
+                    <p className="text-base font-semibold text-primary">
+                      {produtoSelecionado.preco.toLocaleString("pt-BR", {
+                        style: "currency",
+                        currency: "BRL",
+                      })}
+                    </p>
                   </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="gramatura-constraint" className="text-xs text-muted-foreground">
-                      Exigir gramatura
-                    </Label>
-                    <Input
-                      id="gramatura-constraint"
-                      placeholder="Qualquer gramatura"
-                      value={gramaturaConstraint}
-                      onChange={(e) => setGramaturaConstraint(e.target.value)}
-                    />
-                  </div>
-                </div>
+                )}
               </div>
             )}
 
@@ -450,7 +604,11 @@ export default function Home() {
                         )}
                       </div>
                     </div>
-                    <Button variant="destructive" size="sm" onClick={() => removerItem(index)}>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => removerItem(index)}
+                    >
                       Remover
                     </Button>
                   </div>
@@ -521,11 +679,7 @@ export default function Home() {
                 }
                 className="flex-1"
               >
-                {enviando
-                  ? "Otimizando..."
-                  : resultado
-                  ? "Re-otimizar"
-                  : "Otimizar Cesta"}
+                {enviando ? "Otimizando..." : resultado ? "Re-otimizar" : "Otimizar Cesta"}
               </Button>
               {resultado && (
                 <Button variant="outline" onClick={novaConsulta} className="flex-1">
@@ -574,11 +728,13 @@ export default function Home() {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Troco</p>
-                  <p className="font-semibold">{formatarPreco(resultado.troco_centavos)}</p>
+                  <p className="font-semibold">
+                    {formatarPreco(resultado.troco_centavos)}
+                  </p>
                 </div>
               </div>
 
-              {/* Itens selecionados (obrigatórios + otimizados unificados) */}
+              {/* Itens selecionados */}
               {todosItensResultado.length > 0 && (
                 <div className="space-y-2">
                   <p className="font-medium text-sm">
@@ -588,7 +744,9 @@ export default function Home() {
                     </span>
                   </p>
                   {todosItensResultado.map((item, i) => {
-                    const jaProibido = itensProibidos.some((p) => p.productId === item.product_id);
+                    const jaProibido = itensProibidos.some(
+                      (p) => p.productId === item.product_id
+                    );
                     return (
                       <div
                         key={i}
@@ -612,7 +770,8 @@ export default function Home() {
                               item.classificacao}
                           </span>
                           <span className="truncate">
-                            {item.nome} — {item.marca} ({item.gramatura}) × {item.quantidade}
+                            {item.nome} — {item.marca} ({item.gramatura}) ×{" "}
+                            {item.quantidade}
                           </span>
                         </div>
                         <div className="flex items-center gap-3 shrink-0">
@@ -626,7 +785,9 @@ export default function Home() {
                                 : proibirItem(item)
                             }
                             className={`text-xs hover:underline ${
-                              jaProibido ? "text-muted-foreground" : "text-destructive"
+                              jaProibido
+                                ? "text-muted-foreground"
+                                : "text-destructive"
                             }`}
                           >
                             {jaProibido ? "Desfazer" : "Proibir"}
