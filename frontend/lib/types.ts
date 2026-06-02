@@ -18,11 +18,14 @@ export interface Supermercado {
 export type Classificacao = "obrigatorio" | "prioritario" | "desejado"
 
 export interface ItemLista {
-  produto: Produto
+  categoria: string
+  produto: Produto | null
   classificacao: Classificacao
   quantidade: number
   marca: string | null
   gramatura: string | null
+  quantidadeMin: number | null
+  quantidadeMax: number | null
 }
 
 export interface ItemEntradaOtimizador {
@@ -33,6 +36,8 @@ export interface ItemEntradaOtimizador {
   gramatura: string | null
   marca_preferida: string | null
   gramatura_preferida: string | null
+  quantidade_min: number | null
+  quantidade_max: number | null
 }
 
 export interface RequisicaoOtimizacao {

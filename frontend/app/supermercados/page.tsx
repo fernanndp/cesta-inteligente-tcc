@@ -92,6 +92,8 @@ export default function Home() {
   const [classificacao, setClassificacao] = useState<Classificacao>("desejado");
   const [marcaConstraint, setMarcaConstraint] = useState("");
   const [gramaturaConstraint, setGramaturaConstraint] = useState("");
+  const [quantidadeMinConstraint, setQuantidadeMinConstraint] = useState("");
+  const [quantidadeMaxConstraint, setQuantidadeMaxConstraint] = useState("");
   const [mostrarRestricoes, setMostrarRestricoes] = useState(false);
 
   const [itensLista, setItensLista] = useState<ItemLista[]>([]);
@@ -139,35 +141,42 @@ export default function Home() {
 
   const categorias = [...new Set(produtosDoSupermercado.map((p) => p.categoria))].sort();
 
-  const produtosFiltrados = categoriaSelecionada
-    ? produtosDoSupermercado
-        .filter((p) => p.categoria === categoriaSelecionada)
-        .filter(
-          (p) =>
-            !marcaConstraint.trim() ||
-            p.marca.toLowerCase().includes(marcaConstraint.trim().toLowerCase())
-        )
-        .filter(
-          (p) =>
-            !gramaturaConstraint.trim() ||
-            p.gramatura.toLowerCase().includes(gramaturaConstraint.trim().toLowerCase())
-        )
+  const produtosNaCategoria = categoriaSelecionada
+    ? produtosDoSupermercado.filter((p) => p.categoria === categoriaSelecionada)
     : [];
+
+  const marcasDisponiveis = [...new Set(produtosNaCategoria.map((p) => p.marca))].sort();
+
+  const gramaturasFiltradas = [...new Set(
+    produtosNaCategoria
+      .filter((p) => !marcaConstraint || p.marca === marcaConstraint)
+      .map((p) => p.gramatura)
+  )].sort();
+
+  const produtosFiltrados = produtosNaCategoria
+    .filter((p) => !marcaConstraint || p.marca === marcaConstraint)
+    .filter((p) => !gramaturaConstraint || p.gramatura === gramaturaConstraint);
 
   const selecionarProduto = (id: number) => {
     const prod = produtos.find((p) => p.id === id) ?? null;
     setProdutoSelecionado(prod);
   };
 
-  const aplicarTrocaSupermercado = (novoId: number | null) => {
-    setSupermercadoId(novoId);
-    setItensLista([]);
+  const resetarFormItem = () => {
     setCategoriaSelecionada("");
     setProdutoSelecionado(null);
     setMarcaConstraint("");
     setGramaturaConstraint("");
+    setQuantidadeMinConstraint("");
+    setQuantidadeMaxConstraint("");
     setMostrarRestricoes(false);
     setClassificacao("desejado");
+  };
+
+  const aplicarTrocaSupermercado = (novoId: number | null) => {
+    setSupermercadoId(novoId);
+    setItensLista([]);
+    resetarFormItem();
   };
 
   const tentarTrocarSupermercado = (novoId: number | null) => {
@@ -191,23 +200,21 @@ export default function Home() {
   };
 
   const adicionarItem = () => {
-    if (!produtoSelecionado) return;
+    if (!categoriaSelecionada) return;
 
     const item: ItemLista = {
+      categoria: categoriaSelecionada,
       produto: produtoSelecionado,
       classificacao,
       quantidade: 1,
-      marca: marcaConstraint.trim() || null,
-      gramatura: gramaturaConstraint.trim() || null,
+      marca: marcaConstraint || null,
+      gramatura: gramaturaConstraint || null,
+      quantidadeMin: quantidadeMinConstraint ? Number(quantidadeMinConstraint) : null,
+      quantidadeMax: quantidadeMaxConstraint ? Number(quantidadeMaxConstraint) : null,
     };
 
     setItensLista((prev) => [...prev, item]);
-    setProdutoSelecionado(null);
-    setMarcaConstraint("");
-    setGramaturaConstraint("");
-    setMostrarRestricoes(false);
-    setCategoriaSelecionada("");
-    setClassificacao("desejado");
+    resetarFormItem();
   };
 
   const removerItem = (index: number) => {
@@ -233,12 +240,7 @@ export default function Home() {
     setResultado(null);
     setErroOtimizacao("");
     setSupermercadoId(null);
-    setCategoriaSelecionada("");
-    setProdutoSelecionado(null);
-    setMarcaConstraint("");
-    setGramaturaConstraint("");
-    setClassificacao("desejado");
-    setMostrarRestricoes(false);
+    resetarFormItem();
   };
 
   const enviarLista = async () => {
@@ -252,13 +254,15 @@ export default function Home() {
       supermercado_id: supermercadoId,
       orcamento_centavos: Math.round(parseFloat(valorDisponivel) * 100),
       itens: itensLista.map((item) => ({
-        categoria: item.produto.categoria,
+        categoria: item.categoria,
         classificacao: item.classificacao,
         quantidade: item.quantidade,
         marca: item.marca,
         gramatura: item.gramatura,
         marca_preferida: null,
         gramatura_preferida: null,
+        quantidade_min: item.quantidadeMin,
+        quantidade_max: item.quantidadeMax,
       })),
       itens_proibidos: itensProibidos.map((p) => ({ product_id: p.productId })),
       semente_aleatoria: null,
@@ -332,6 +336,32 @@ export default function Home() {
           <p className="text-sm text-destructive">{erroCarregamento}</p>
         )}
 
+        {/* Orçamento */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Orçamento</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <Label htmlFor="valor">Valor disponível (R$) *</Label>
+              <Input
+                id="valor"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="Ex: 150.00"
+                value={valorDisponivel}
+                onChange={(e) => setValorDisponivel(e.target.value)}
+              />
+              {!valorDisponivel && (
+                <p className="text-xs text-muted-foreground">
+                  Informe o orçamento antes de montar a cesta.
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Adicionar Item */}
         <Card>
           <CardHeader>
@@ -379,6 +409,8 @@ export default function Home() {
                     setProdutoSelecionado(null);
                     setMarcaConstraint("");
                     setGramaturaConstraint("");
+                    setQuantidadeMinConstraint("");
+                    setQuantidadeMaxConstraint("");
                     setMostrarRestricoes(false);
                     setClassificacao("desejado");
                   }}
@@ -394,7 +426,7 @@ export default function Home() {
               </div>
             )}
 
-            {/* Classificação — aparece após categoria, antes de produto */}
+            {/* Classificação */}
             {categoriaSelecionada && (
               <div className="space-y-2">
                 <Label>Classificação</Label>
@@ -421,7 +453,7 @@ export default function Home() {
               </div>
             )}
 
-            {/* Restrições — colapsável, "sem restrição" como padrão */}
+            {/* Restrições */}
             {categoriaSelecionada && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -441,6 +473,8 @@ export default function Home() {
                         setMostrarRestricoes(false);
                         setMarcaConstraint("");
                         setGramaturaConstraint("");
+                        setQuantidadeMinConstraint("");
+                        setQuantidadeMaxConstraint("");
                         setProdutoSelecionado(null);
                       }}
                       className="text-xs text-muted-foreground hover:underline"
@@ -449,55 +483,119 @@ export default function Home() {
                     </button>
                   )}
                 </div>
+
                 {!mostrarRestricoes ? (
                   <p className="rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground">
-                    Sem restrição — qualquer marca ou gramatura será aceita
+                    Sem restrição — qualquer marca, gramatura ou quantidade será aceita
                   </p>
                 ) : (
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <Label
-                        htmlFor="marca-constraint"
-                        className="text-xs text-muted-foreground"
-                      >
-                        Exigir marca
-                      </Label>
-                      <Input
-                        id="marca-constraint"
-                        placeholder="Qualquer marca"
-                        value={marcaConstraint}
-                        onChange={(e) => {
-                          setMarcaConstraint(e.target.value);
-                          setProdutoSelecionado(null);
-                        }}
-                      />
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      {/* Marca */}
+                      <div className="space-y-1">
+                        <Label
+                          htmlFor="marca-constraint"
+                          className="text-xs text-muted-foreground"
+                        >
+                          Exigir marca
+                        </Label>
+                        <select
+                          id="marca-constraint"
+                          value={marcaConstraint}
+                          onChange={(e) => {
+                            setMarcaConstraint(e.target.value);
+                            setGramaturaConstraint("");
+                            setProdutoSelecionado(null);
+                          }}
+                          className="w-full rounded-md border border-border bg-input px-3 py-2 text-sm text-foreground"
+                        >
+                          <option value="">Qualquer marca</option>
+                          {marcasDisponiveis.map((m) => (
+                            <option key={m} value={m}>
+                              {m}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Gramatura */}
+                      <div className="space-y-1">
+                        <Label
+                          htmlFor="gramatura-constraint"
+                          className="text-xs text-muted-foreground"
+                        >
+                          Exigir gramatura
+                        </Label>
+                        <select
+                          id="gramatura-constraint"
+                          value={gramaturaConstraint}
+                          onChange={(e) => {
+                            setGramaturaConstraint(e.target.value);
+                            setProdutoSelecionado(null);
+                          }}
+                          className="w-full rounded-md border border-border bg-input px-3 py-2 text-sm text-foreground"
+                        >
+                          <option value="">Qualquer gramatura</option>
+                          {gramaturasFiltradas.map((g) => (
+                            <option key={g} value={g}>
+                              {g}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
-                    <div className="space-y-1">
-                      <Label
-                        htmlFor="gramatura-constraint"
-                        className="text-xs text-muted-foreground"
-                      >
-                        Exigir gramatura
-                      </Label>
-                      <Input
-                        id="gramatura-constraint"
-                        placeholder="Qualquer gramatura"
-                        value={gramaturaConstraint}
-                        onChange={(e) => {
-                          setGramaturaConstraint(e.target.value);
-                          setProdutoSelecionado(null);
-                        }}
-                      />
+
+                    {/* Quantidade min/max */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label
+                          htmlFor="qtd-min"
+                          className="text-xs text-muted-foreground"
+                        >
+                          Quantidade mínima
+                        </Label>
+                        <Input
+                          id="qtd-min"
+                          type="number"
+                          min="1"
+                          step="1"
+                          placeholder="Sem mínimo"
+                          value={quantidadeMinConstraint}
+                          onChange={(e) => setQuantidadeMinConstraint(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label
+                          htmlFor="qtd-max"
+                          className="text-xs text-muted-foreground"
+                        >
+                          Quantidade máxima
+                        </Label>
+                        <Input
+                          id="qtd-max"
+                          type="number"
+                          min="1"
+                          step="1"
+                          placeholder="Sem máximo"
+                          value={quantidadeMaxConstraint}
+                          onChange={(e) => setQuantidadeMaxConstraint(e.target.value)}
+                        />
+                      </div>
                     </div>
                   </div>
                 )}
               </div>
             )}
 
-            {/* Referência do produto — aparece após classificação e restrições */}
+            {/* Referência do produto (opcional) */}
             {categoriaSelecionada && (
               <div className="space-y-2">
-                <Label htmlFor="produto">Referência do produto</Label>
+                <Label htmlFor="produto">
+                  Referência do produto{" "}
+                  <span className="text-xs text-muted-foreground font-normal">
+                    (opcional)
+                  </span>
+                </Label>
                 <select
                   id="produto"
                   value={produtoSelecionado?.id ?? ""}
@@ -507,15 +605,14 @@ export default function Home() {
                   }}
                   className="w-full rounded-md border border-border bg-input px-3 py-2 text-foreground"
                 >
-                  <option value="">Selecione um produto</option>
+                  <option value="">Nenhuma referência</option>
                   {produtosFiltrados.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.nome}
+                      {p.nome} — {p.marca} ({p.gramatura})
                     </option>
                   ))}
                 </select>
 
-                {/* Detalhes do produto selecionado */}
                 {produtoSelecionado && (
                   <div className="rounded-lg border border-border bg-secondary p-3 space-y-2">
                     <p className="font-medium">{produtoSelecionado.nome}</p>
@@ -550,7 +647,7 @@ export default function Home() {
               </div>
             )}
 
-            {produtoSelecionado && (
+            {categoriaSelecionada && (
               <Button onClick={adicionarItem} className="w-full">
                 Adicionar à Lista
               </Button>
@@ -576,9 +673,11 @@ export default function Home() {
                     className="flex items-start justify-between rounded-lg border border-border bg-secondary p-4"
                   >
                     <div className="space-y-1">
-                      <p className="font-semibold">{item.produto.nome}</p>
+                      <p className="font-semibold">
+                        {item.produto?.nome ?? item.categoria}
+                      </p>
                       <p className="text-sm text-muted-foreground">
-                        Categoria: {item.produto.categoria}
+                        Categoria: {item.categoria}
                       </p>
                       <div className="flex flex-wrap gap-2 mt-2">
                         <span
@@ -600,6 +699,16 @@ export default function Home() {
                         {item.gramatura && (
                           <span className="text-xs px-2 py-1 rounded bg-muted text-muted-foreground">
                             Gramatura: {item.gramatura}
+                          </span>
+                        )}
+                        {item.quantidadeMin !== null && (
+                          <span className="text-xs px-2 py-1 rounded bg-muted text-muted-foreground">
+                            Qtd mín: {item.quantidadeMin}
+                          </span>
+                        )}
+                        {item.quantidadeMax !== null && (
+                          <span className="text-xs px-2 py-1 rounded bg-muted text-muted-foreground">
+                            Qtd máx: {item.quantidadeMax}
                           </span>
                         )}
                       </div>
@@ -624,19 +733,6 @@ export default function Home() {
             <CardTitle>Finalizar</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="valor">Orçamento disponível (R$)</Label>
-              <Input
-                id="valor"
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder="Ex: 150.00"
-                value={valorDisponivel}
-                onChange={(e) => setValorDisponivel(e.target.value)}
-              />
-            </div>
-
             {/* Produtos proibidos */}
             {itensProibidos.length > 0 && (
               <div className="space-y-2">
