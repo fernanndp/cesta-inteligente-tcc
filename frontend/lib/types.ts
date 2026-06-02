@@ -24,8 +24,6 @@ export interface ItemLista {
   quantidade: number
   marca: string | null
   gramatura: string | null
-  quantidadeMin: number | null
-  quantidadeMax: number | null
 }
 
 export interface ItemEntradaOtimizador {
@@ -36,8 +34,6 @@ export interface ItemEntradaOtimizador {
   gramatura: string | null
   marca_preferida: string | null
   gramatura_preferida: string | null
-  quantidade_min: number | null
-  quantidade_max: number | null
 }
 
 export interface RequisicaoOtimizacao {

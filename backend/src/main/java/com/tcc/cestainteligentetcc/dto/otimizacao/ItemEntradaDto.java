@@ -9,7 +9,5 @@ public record ItemEntradaDto(
         String marca,
         String gramatura,
         @JsonProperty("marca_preferida") String marcaPreferida,
-        @JsonProperty("gramatura_preferida") String gramaturaPreferida,
-        @JsonProperty("quantidade_min") Integer quantidadeMin,
-        @JsonProperty("quantidade_max") Integer quantidadeMax
+        @JsonProperty("gramatura_preferida") String gramaturaPreferida
 ) {}

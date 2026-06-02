@@ -92,8 +92,7 @@ export default function Home() {
   const [classificacao, setClassificacao] = useState<Classificacao>("desejado");
   const [marcaConstraint, setMarcaConstraint] = useState("");
   const [gramaturaConstraint, setGramaturaConstraint] = useState("");
-  const [quantidadeMinConstraint, setQuantidadeMinConstraint] = useState("");
-  const [quantidadeMaxConstraint, setQuantidadeMaxConstraint] = useState("");
+  const [quantidadeConstraint, setQuantidadeConstraint] = useState("");
   const [mostrarRestricoes, setMostrarRestricoes] = useState(false);
 
   const [itensLista, setItensLista] = useState<ItemLista[]>([]);
@@ -167,8 +166,7 @@ export default function Home() {
     setProdutoSelecionado(null);
     setMarcaConstraint("");
     setGramaturaConstraint("");
-    setQuantidadeMinConstraint("");
-    setQuantidadeMaxConstraint("");
+    setQuantidadeConstraint("");
     setMostrarRestricoes(false);
     setClassificacao("desejado");
   };
@@ -206,11 +204,9 @@ export default function Home() {
       categoria: categoriaSelecionada,
       produto: produtoSelecionado,
       classificacao,
-      quantidade: 1,
+      quantidade: quantidadeConstraint ? Math.max(1, Number(quantidadeConstraint)) : 1,
       marca: marcaConstraint || null,
       gramatura: gramaturaConstraint || null,
-      quantidadeMin: quantidadeMinConstraint ? Number(quantidadeMinConstraint) : null,
-      quantidadeMax: quantidadeMaxConstraint ? Number(quantidadeMaxConstraint) : null,
     };
 
     setItensLista((prev) => [...prev, item]);
@@ -261,8 +257,6 @@ export default function Home() {
         gramatura: item.gramatura,
         marca_preferida: null,
         gramatura_preferida: null,
-        quantidade_min: item.quantidadeMin,
-        quantidade_max: item.quantidadeMax,
       })),
       itens_proibidos: itensProibidos.map((p) => ({ product_id: p.productId })),
       semente_aleatoria: null,
@@ -409,8 +403,7 @@ export default function Home() {
                     setProdutoSelecionado(null);
                     setMarcaConstraint("");
                     setGramaturaConstraint("");
-                    setQuantidadeMinConstraint("");
-                    setQuantidadeMaxConstraint("");
+                    setQuantidadeConstraint("");
                     setMostrarRestricoes(false);
                     setClassificacao("desejado");
                   }}
@@ -473,8 +466,7 @@ export default function Home() {
                         setMostrarRestricoes(false);
                         setMarcaConstraint("");
                         setGramaturaConstraint("");
-                        setQuantidadeMinConstraint("");
-                        setQuantidadeMaxConstraint("");
+                        setQuantidadeConstraint("");
                         setProdutoSelecionado(null);
                       }}
                       className="text-xs text-muted-foreground hover:underline"
@@ -545,42 +537,23 @@ export default function Home() {
                       </div>
                     </div>
 
-                    {/* Quantidade min/max */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <Label
-                          htmlFor="qtd-min"
-                          className="text-xs text-muted-foreground"
-                        >
-                          Quantidade mínima
-                        </Label>
-                        <Input
-                          id="qtd-min"
-                          type="number"
-                          min="1"
-                          step="1"
-                          placeholder="Sem mínimo"
-                          value={quantidadeMinConstraint}
-                          onChange={(e) => setQuantidadeMinConstraint(e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label
-                          htmlFor="qtd-max"
-                          className="text-xs text-muted-foreground"
-                        >
-                          Quantidade máxima
-                        </Label>
-                        <Input
-                          id="qtd-max"
-                          type="number"
-                          min="1"
-                          step="1"
-                          placeholder="Sem máximo"
-                          value={quantidadeMaxConstraint}
-                          onChange={(e) => setQuantidadeMaxConstraint(e.target.value)}
-                        />
-                      </div>
+                    {/* Quantidade */}
+                    <div className="space-y-1">
+                      <Label
+                        htmlFor="quantidade"
+                        className="text-xs text-muted-foreground"
+                      >
+                        Quantidade
+                      </Label>
+                      <Input
+                        id="quantidade"
+                        type="number"
+                        min="1"
+                        step="1"
+                        placeholder="1"
+                        value={quantidadeConstraint}
+                        onChange={(e) => setQuantidadeConstraint(e.target.value)}
+                      />
                     </div>
                   </div>
                 )}
@@ -701,14 +674,9 @@ export default function Home() {
                             Gramatura: {item.gramatura}
                           </span>
                         )}
-                        {item.quantidadeMin !== null && (
+                        {item.quantidade > 1 && (
                           <span className="text-xs px-2 py-1 rounded bg-muted text-muted-foreground">
-                            Qtd mín: {item.quantidadeMin}
-                          </span>
-                        )}
-                        {item.quantidadeMax !== null && (
-                          <span className="text-xs px-2 py-1 rounded bg-muted text-muted-foreground">
-                            Qtd máx: {item.quantidadeMax}
+                            Qtd: {item.quantidade}
                           </span>
                         )}
                       </div>
