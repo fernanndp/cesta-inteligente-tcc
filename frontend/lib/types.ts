@@ -18,12 +18,21 @@ export interface Supermercado {
 export type Classificacao = "obrigatorio" | "prioritario" | "desejado"
 
 export interface ItemLista {
+  /** Identificador estável usado para editar/duplicar/remover sem depender do índice. */
+  id: string
   categoria: string
   produto: Produto | null
   classificacao: Classificacao
   quantidade: number
   marca: string | null
   gramatura: string | null
+}
+
+/** Produto excluído da próxima otimização (mapeado para `itens_proibidos` na requisição). */
+export interface ItemProibido {
+  productId: number
+  nome: string
+  marca: string
 }
 
 export interface ItemEntradaOtimizador {
