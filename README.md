@@ -2,7 +2,6 @@
 
 ![Status](https://img.shields.io/badge/status-em%20desenvolvimento-yellow)
 ![Java](https://img.shields.io/badge/backend-Java%20%7C%20Spring%20Boot-red)
-![React](https://img.shields.io/badge/frontend-React.js-blue)
 ![Next.js](https://img.shields.io/badge/frontend-React.js%20%7C%20Next.js-blue)
 ![Python](https://img.shields.io/badge/otimiza%C3%A7%C3%A3o-Python%20%7C%20FastAPI-green)
 ![PostgreSQL](https://img.shields.io/badge/database-PostgreSQL-blue)
