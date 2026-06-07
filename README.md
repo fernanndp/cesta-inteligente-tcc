@@ -9,18 +9,12 @@
 Sistema desenvolvido como Trabalho de Conclusão de Curso (TCC), com o objetivo de otimizar compras em supermercados a partir de um orçamento definido pelo usuário, utilizando conceitos de **Otimização Combinatória** e o **Problema da Mochila**.
 
 ---
-## Link do projeto
 
-A aplicação está disponível em:
+## Links
 
-[https://cesta-inteligente-tcc-production.up.railway.app/](https://cesta-inteligente-tcc-production.up.railway.app/)
+- **Projeto:** [Acessar aplicação](https://cesta-inteligente-tcc-production.up.railway.app/)
+- **API:** [Acessar documentação da API](https://api-otimizacao-python-production.up.railway.app/docs)
 
----
-
-## Link da API
-
-A API está disponível em:
-[https://api-otimizacao-python-production.up.railway.app/docs](https://api-otimizacao-python-production.up.railway.app/docs)
 ---
 
 
