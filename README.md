@@ -15,6 +15,11 @@ A aplicação está disponível em:
 
 [https://cesta-inteligente-tcc-production.up.railway.app/](https://cesta-inteligente-tcc-production.up.railway.app/)
 
+
+## Link da API
+
+A API está disponível em:
+[https://api-otimizacao-python-production.up.railway.app/docs](https://api-otimizacao-python-production.up.railway.app/docs)
 ---
 
 
