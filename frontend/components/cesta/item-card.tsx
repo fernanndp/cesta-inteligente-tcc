@@ -12,6 +12,7 @@ import {
 import type { Classificacao, ItemLista } from "@/lib/types";
 import {
   LABEL_CLASSIFICACAO,
+  restricoesEfetivas,
   varianteClassificacao,
 } from "@/lib/cesta";
 import { Badge } from "@/components/ui/badge";
@@ -46,6 +47,7 @@ export function ItemCard({
   onClassificar,
 }: ItemCardProps) {
   const Icone = ICONE_CLASSIFICACAO[item.classificacao];
+  const restricoes = restricoesEfetivas(item);
 
   return (
     <div className="flex items-start justify-between gap-3 rounded-xl border border-border bg-card p-4 shadow-sm transition-shadow hover:shadow-md">
@@ -63,9 +65,11 @@ export function ItemCard({
           <Badge variant={varianteClassificacao(item.classificacao)}>
             {LABEL_CLASSIFICACAO[item.classificacao]}
           </Badge>
-          {item.marca && <Badge variant="outline">Marca: {item.marca}</Badge>}
-          {item.gramatura && (
-            <Badge variant="outline">Gramatura: {item.gramatura}</Badge>
+          {restricoes.marca && (
+            <Badge variant="outline">Marca: {restricoes.marca}</Badge>
+          )}
+          {restricoes.gramatura && (
+            <Badge variant="outline">Gramatura: {restricoes.gramatura}</Badge>
           )}
           {item.quantidade > 1 && (
             <Badge variant="outline">Qtd: {item.quantidade}</Badge>

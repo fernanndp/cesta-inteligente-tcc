@@ -11,6 +11,7 @@ import type {
   RespostaOtimizacao,
 } from "@/lib/types";
 import { backendHeaders, backendUrl } from "@/lib/api";
+import { restricoesEfetivas } from "@/lib/cesta";
 
 /** Dados editáveis de um item, sem o `id` (gerado internamente). */
 export type DadosItem = Omit<ItemLista, "id">;
@@ -36,8 +37,7 @@ function snapshotEntradas(
       categoria: i.categoria,
       classificacao: i.classificacao,
       quantidade: i.quantidade,
-      marca: i.marca,
-      gramatura: i.gramatura,
+      ...restricoesEfetivas(i),
     })),
     proibidos: proibidos.map((p) => p.productId).sort(),
   });
@@ -161,8 +161,7 @@ export function useCesta() {
         categoria: item.categoria,
         classificacao: item.classificacao,
         quantidade: item.quantidade,
-        marca: item.marca,
-        gramatura: item.gramatura,
+        ...restricoesEfetivas(item),
         marca_preferida: null,
         gramatura_preferida: null,
       })),

@@ -7,6 +7,7 @@ import {
   DESCRICAO_CLASSIFICACAO,
   LABEL_CLASSIFICACAO,
   formatarPreco,
+  restricoesEfetivas,
 } from "@/lib/cesta";
 import type { DadosItem } from "@/hooks/use-cesta";
 import { Button } from "@/components/ui/button";
@@ -64,10 +65,13 @@ export function ItemFormDialog({
   useEffect(() => {
     if (!open) return;
     if (itemEmEdicao) {
+      // Itens com referência mas sem marca/gramatura (criados antes do
+      // preenchimento automático) são normalizados ao abrir para edição.
+      const restricoes = restricoesEfetivas(itemEmEdicao);
       setCategoria(itemEmEdicao.categoria);
       setClassificacao(itemEmEdicao.classificacao);
-      setMarca(itemEmEdicao.marca ?? "");
-      setGramatura(itemEmEdicao.gramatura ?? "");
+      setMarca(restricoes.marca ?? "");
+      setGramatura(restricoes.gramatura ?? "");
       setQuantidade(String(itemEmEdicao.quantidade));
       setProdutoId(itemEmEdicao.produto ? String(itemEmEdicao.produto.id) : "");
     } else {
@@ -142,6 +146,18 @@ export function ItemFormDialog({
     setProdutoId("");
   };
 
+  // A referência define as restrições: marca e gramatura do produto
+  // escolhido sobrescrevem qualquer valor manual. Limpar a referência
+  // mantém os valores nos campos, que continuam editáveis.
+  const aoMudarReferencia = (valor: string) => {
+    setProdutoId(valor);
+    const produto = produtosNaCategoria.find((p) => String(p.id) === valor);
+    if (produto) {
+      setMarca(produto.marca);
+      setGramatura(produto.gramatura);
+    }
+  };
+
   const submeter = () => {
     if (!categoria) return;
     onSubmit({
@@ -149,8 +165,11 @@ export function ItemFormDialog({
       produto: produtoSelecionado,
       classificacao,
       quantidade: Math.max(1, Number(quantidade) || 1),
-      marca: marca || null,
-      gramatura: gramatura || null,
+      ...restricoesEfetivas({
+        produto: produtoSelecionado,
+        marca: marca || null,
+        gramatura: gramatura || null,
+      }),
     });
     onOpenChange(false);
   };
@@ -294,7 +313,7 @@ export function ItemFormDialog({
                   label: `${p.nome} — ${p.marca} (${p.gramatura})`,
                 }))}
                 value={produtoId}
-                onChange={setProdutoId}
+                onChange={aoMudarReferencia}
                 placeholder="Nenhuma referência"
                 searchPlaceholder="Buscar produto..."
                 emptyText="Nenhum produto compatível."
